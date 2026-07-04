@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 428847003845.dkr.ecr.ap-south-1.amazonaws.com/efootball25-frontend:latest
+          image: 428847003845.dkr.ecr.ap-south-1.amazonaws.com/efootball25-frontend:v3
           ports:
             - containerPort: 80
 
