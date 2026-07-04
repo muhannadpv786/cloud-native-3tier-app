@@ -1,80 +1,71 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'ap-south-1'
+        AWS_ACCOUNT_ID = '428847003845'
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        FRONTEND_REPO = "efootball25-frontend"
+        BACKEND_REPO  = "efootball25-backend"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
     stages {
-        stage ('Hello') {
+        stage('Checkout') {
             steps {
-                echo 'Hello World'
+                git branch: 'main', url: 'https://github.com/TanmoyDas02/cloud-native-3tier-app.git'
             }
         }
 
-        stage ('Workspace check') {
+        stage('Login to ECR') {
             steps {
-                sh 'pwd'
-                sh 'ls -la'
+                sh '''
+                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+                '''
             }
         }
 
-        stage ('Docker check') {
+        stage('Build Docker Images') {
             steps {
-                sh 'docker --version'
+                sh '''
+                docker build -t $ECR_REGISTRY/$BACKEND_REPO:$IMAGE_TAG app/efootball25/backend
+                docker build --build-arg VITE_API_URL="" -t $ECR_REGISTRY/$FRONTEND_REPO:$IMAGE_TAG app/efootball25/frontend
+                '''
             }
         }
 
-        stage ('Build backend image') {
+        stage('Push Docker Images') {
             steps {
-                sh 'docker build -t efootball25-backend:latest ./app/efootball25/backend'
+                sh '''
+                docker push $ECR_REGISTRY/$BACKEND_REPO:$IMAGE_TAG
+                docker push $ECR_REGISTRY/$FRONTEND_REPO:$IMAGE_TAG
+                '''
             }
         }
 
-        stage ('Build frontend image') {
+        stage('Deploy to EKS') {
             steps {
-                sh 'docker build -t efootball25-frontend:latest ./app/efootball25/frontend'
+                sh '''
+                kubectl apply -f kubernetes/mysql.yaml
+                kubectl apply -f kubernetes/backend.yaml
+                kubectl apply -f kubernetes/frontend.yaml
+
+                kubectl set image deployment/backend backend=$ECR_REGISTRY/$BACKEND_REPO:$IMAGE_TAG
+                kubectl set image deployment/frontend frontend=$ECR_REGISTRY/$FRONTEND_REPO:$IMAGE_TAG
+
+                kubectl rollout status deployment/backend
+                kubectl rollout status deployment/frontend
+                '''
             }
         }
 
-        stage('Docker Hub Login') {
+        stage('Verify') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'}
+                sh '''
+                kubectl get pods
+                kubectl get svc
+                '''
             }
         }
-
-        stage('Tag Images') {
-            steps {
-                sh 'docker tag efootball25-backend:latest tanmoydas02/efootball25-backend:latest'
-                sh 'docker tag efootball25-frontend:latest tanmoydas02/efootball25-frontend:latest'
-            }
-        }
-
-        stage('Push Images') {
-            steps {
-                sh 'docker push tanmoydas02/efootball25-backend:latest'
-                sh 'docker push tanmoydas02/efootball25-frontend:latest'
-            }
-        }
-
-        /*stage('Deploy with Docker Compose') {
-            steps {
-                dir('app/efootball25') {
-                    sh 'docker-compose pull'
-                    sh 'docker-compose up -d'
-                }
-            }
-        }*/
-
-        stage ('Deploy to EC2') {
-            steps {
-                sshagent(['ec2-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@13.233.133.81 "
-                            cd ~/efootball25 && 
-                            docker compose pull &&
-                            docker compose up -d
-                            "
-                        '''
-                }
-            }
-        }  
     }
 }

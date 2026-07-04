@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    stages {
+        stage ('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+
+        stage ('Workspace check') {
+            steps {
+                sh 'pwd'
+                sh 'ls -la'
+            }
+        }
+
+        stage ('Docker check') {
+            steps {
+                sh 'docker --version'
+            }
+        }
+
+        stage ('Build backend image') {
+            steps {
+                sh 'docker build -t efootball25-backend:latest ./app/efootball25/backend'
+            }
+        }
+
+        stage ('Build frontend image') {
+            steps {
+                sh 'docker build -t efootball25-frontend:latest ./app/efootball25/frontend'
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'}
+            }
+        }
+
+        stage('Tag Images') {
+            steps {
+                sh 'docker tag efootball25-backend:latest tanmoydas02/efootball25-backend:latest'
+                sh 'docker tag efootball25-frontend:latest tanmoydas02/efootball25-frontend:latest'
+            }
+        }
+
+        stage('Push Images') {
+            steps {
+                sh 'docker push tanmoydas02/efootball25-backend:latest'
+                sh 'docker push tanmoydas02/efootball25-frontend:latest'
+            }
+        }
+
+        /*stage('Deploy with Docker Compose') {
+            steps {
+                dir('app/efootball25') {
+                    sh 'docker-compose pull'
+                    sh 'docker-compose up -d'
+                }
+            }
+        }*/
+
+        stage ('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-ssh-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.233.133.81 "
+                            cd ~/efootball25 && 
+                            docker compose pull &&
+                            docker compose up -d
+                            "
+                        '''
+                }
+            }
+        }  
+    }
+}
