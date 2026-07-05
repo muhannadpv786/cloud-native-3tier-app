@@ -201,23 +201,24 @@ A custom Grafana dashboard was created to monitor the application:
 
 ### Application Running Through AWS LoadBalancer
 
-![Application UI](docs/screenshots/application-ui.png)
+![Application UI](docs/screenshots/application-ui.jpeg)
 
 ### Kubernetes Pods, Services, and Persistent Storage
 
-![Kubernetes Resources](docs/screenshots/kubernetes-resources.png)
+![Kubernetes Resources](docs/screenshots/kubernetes-resources.jpeg)
 
 ### Jenkins CI/CD Pipeline Success
 
-![Jenkins Pipeline Success](docs/screenshots/jenkins-pipeline-success.png)
+![Jenkins Pipeline Success](docs/screenshots/jenkins-pipeline-success.jpeg)
 
 ### Grafana Application Monitoring Dashboard
 
-![Grafana Dashboard](docs/screenshots/grafana-dashboard.png)
+![Grafana Dashboard](docs/screenshots/grafana-dashboard.jpeg)
 
-### AWS LoadBalancer Service
+### Promethus and Grafana Setup dashboard
 
-![EKS LoadBalancer](docs/screenshots/eks-loadbalancer.png)
+![Dashboard 1](docs/screenshots/Dashboard-1.jpeg)
+![Dashboard 2](docs/screenshots/Dashboard-2.jpeg)
 
 ---
 
