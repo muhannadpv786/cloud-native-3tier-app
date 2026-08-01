@@ -53,7 +53,7 @@ resource "aws_route_table_association" "public_subnet_association" {
 }
 
 resource "aws_security_group" "muhannad_sg" {
-  name        = "efootball25_sg"
+  name        = "muhannad_sg"
   description = "Security group for muhannad application"
   vpc_id      = aws_vpc.muhannad_vpc.id
 
