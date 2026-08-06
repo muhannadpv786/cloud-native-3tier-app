@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: backend-secret
+  namespace: muhannad-app
 type: Opaque
 stringData:
   DB_PASSWORD: root123
@@ -11,8 +12,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: muhannad-app
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: backend
@@ -21,38 +24,44 @@ spec:
     metadata:
       labels:
         app: backend
+
     spec:
       containers:
-        - name: backend
-          image: 428847003845.dkr.ecr.ap-south-1.amazonaws.com/efootball25-backend:latest
-          ports:
-            - containerPort: 3001
+      - name: backend
+        image: muhannadpv/backend:latest
+        imagePullPolicy: Always
 
-          env:
-            - name: DB_HOST
-              value: mysql
+        ports:
+        - containerPort: 3001
 
-            - name: DB_USER
-              value: root
+        env:
+        - name: DB_HOST
+          value: mysql
 
-            - name: DB_NAME
-              value: efootball
+        - name: DB_USER
+          value: root
 
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: backend-secret
-                  key: DB_PASSWORD
+        - name: DB_NAME
+          value: efootball
+
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_PASSWORD
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
+  namespace: muhannad-app
 spec:
   selector:
     app: backend
+
   ports:
-    - port: 3001
-      targetPort: 3001
+  - port: 3001
+    targetPort: 3001
+
   type: ClusterIP
